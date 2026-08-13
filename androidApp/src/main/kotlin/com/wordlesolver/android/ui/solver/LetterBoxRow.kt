@@ -2,13 +2,17 @@ package com.wordlesolver.android.ui.solver
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -18,9 +22,9 @@ import androidx.compose.ui.unit.sp
 import com.wordlesolver.domain.model.LetterRow
 
 /**
- * Renders a [LetterRow] as 5 boxes. [onLetterChanged] fires as the user types (position, letter);
- * typing auto-advances focus is left to the caller/parent via [onAutoAdvance] since Compose's
- * FocusManager isn't wired here to keep this composable state-agnostic.
+ * Renders a [LetterRow] as 5 boxes. When typable (onBoxTapped == null), typing a letter
+ * auto-advances focus to the next box, per spec: "When the user types one letter in an
+ * input, they're immediately moved to the next box in the right."
  */
 @Composable
 fun LetterBoxRow(
@@ -30,12 +34,20 @@ fun LetterBoxRow(
     modifier: Modifier = Modifier,
     onBoxTapped: ((position: Int) -> Unit)? = null
 ) {
+    val focusRequesters = remember(row.letters.size) { List(row.letters.size) { FocusRequester() } }
+
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         row.letters.forEach { boxed ->
             LetterBox(
                 letter = boxed.letter,
                 color = boxColorFor(boxed.state),
-                onLetterChanged = { newLetter -> onLetterChanged(boxed.position, newLetter) },
+                focusRequester = focusRequesters[boxed.position],
+                onLetterChanged = { newLetter ->
+                    onLetterChanged(boxed.position, newLetter)
+                    if (newLetter != null && boxed.position < focusRequesters.lastIndex) {
+                        focusRequesters[boxed.position + 1].requestFocus()
+                    }
+                },
                 onTapped = onBoxTapped?.let { { it(boxed.position) } }
             )
         }
@@ -46,11 +58,12 @@ fun LetterBoxRow(
 private fun LetterBox(
     letter: Char?,
     color: Color,
+    focusRequester: FocusRequester,
     onLetterChanged: (Char?) -> Unit,
     onTapped: (() -> Unit)?
 ) {
-    var text = letter?.toString().orEmpty()
-    androidx.compose.foundation.layout.Box(
+    val text = letter?.toString().orEmpty()
+    Box(
         modifier = Modifier
             .size(48.dp)
             .background(color),
@@ -62,8 +75,7 @@ private fun LetterBox(
                 text = text,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                modifier = Modifier.background(Color.Transparent)
+                fontSize = 20.sp
             )
         } else {
             BasicTextField(
@@ -78,7 +90,8 @@ private fun LetterBox(
                     fontSize = 20.sp,
                     textAlign = TextAlign.Center
                 ),
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.focusRequester(focusRequester)
             )
         }
     }

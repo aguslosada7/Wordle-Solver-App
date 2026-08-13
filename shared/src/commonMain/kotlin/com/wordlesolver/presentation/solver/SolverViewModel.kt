@@ -10,6 +10,7 @@ import com.wordlesolver.domain.repository.PastAnswersRepository
 import com.wordlesolver.domain.repository.WordRepository
 import com.wordlesolver.domain.usecase.FilterWordsBasicUseCase
 import com.wordlesolver.domain.usecase.FilterWordsByPatternsUseCase
+import com.wordlesolver.domain.usecase.GetRelatedWordsByPatternUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +25,8 @@ class SolverViewModel(
     private val wordRepository: WordRepository,
     private val pastAnswersRepository: PastAnswersRepository,
     private val filterWordsBasicUseCase: FilterWordsBasicUseCase = FilterWordsBasicUseCase(),
-    private val filterWordsByPatternsUseCase: FilterWordsByPatternsUseCase = FilterWordsByPatternsUseCase()
+    private val filterWordsByPatternsUseCase: FilterWordsByPatternsUseCase = FilterWordsByPatternsUseCase(),
+    private val getRelatedWordsByPatternUseCase: GetRelatedWordsByPatternUseCase = GetRelatedWordsByPatternUseCase()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SolverUiState())
@@ -115,6 +117,36 @@ class SolverViewModel(
 
     fun onExcludePreviousAnswersToggled(enabled: Boolean) {
         _uiState.update { it.copy(excludePreviousAnswers = enabled) }
+    }
+
+    // --- Related words modal (pattern filtering only) --------------------------
+
+    /**
+     * Per spec: "If filtering by patterns is enabled, when selecting a word from the
+     * results, a modal is displayed" showing General-dictionary words matching each pattern.
+     */
+    fun onResultWordSelected(word: String) {
+        val state = _uiState.value
+        val activePatterns = state.patterns.filter { pattern ->
+            pattern.row.letters.any { it.letter != null }
+        }
+        if (activePatterns.isEmpty()) return
+
+        viewModelScope.launch {
+            val generalDictionary = wordRepository.getGeneralDictionary()
+            val relatedByPattern = getRelatedWordsByPatternUseCase(activePatterns, generalDictionary)
+            val modalState = RelatedWordsModalState(
+                selectedWord = word,
+                wordsByPattern = activePatterns.map { pattern ->
+                    PatternRelatedWords(pattern = pattern, relatedWords = relatedByPattern[pattern].orEmpty())
+                }
+            )
+            _uiState.update { it.copy(relatedWordsModal = modalState) }
+        }
+    }
+
+    fun dismissRelatedWordsModal() {
+        _uiState.update { it.copy(relatedWordsModal = null) }
     }
 
     // --- Actions -----------------------------------------------------------------

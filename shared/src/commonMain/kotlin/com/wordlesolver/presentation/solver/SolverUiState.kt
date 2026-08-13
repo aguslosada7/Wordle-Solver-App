@@ -18,7 +18,9 @@ data class SolverUiState(
     val excludePreviousAnswers: Boolean = false,
     val isLoading: Boolean = false,
     val results: List<SolverResultWord> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** Non-null while the "related words by pattern" modal is showing. */
+    val relatedWordsModal: RelatedWordsModalState? = null
 )
 
 /**
@@ -28,4 +30,18 @@ data class SolverUiState(
 data class SolverResultWord(
     val word: String,
     val isWordleWord: Boolean
+)
+
+/**
+ * State for the modal shown when pattern filtering is enabled and the user taps a result
+ * word: the word that was tapped, plus the General-dictionary words matching each pattern.
+ */
+data class RelatedWordsModalState(
+    val selectedWord: String,
+    val wordsByPattern: List<PatternRelatedWords>
+)
+
+data class PatternRelatedWords(
+    val pattern: WordPattern,
+    val relatedWords: List<String>
 )

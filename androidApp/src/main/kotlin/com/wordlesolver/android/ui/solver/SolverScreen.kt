@@ -1,14 +1,17 @@
 package com.wordlesolver.android.ui.solver
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
@@ -147,9 +150,37 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(background)
+                        .clickable { viewModel.onResultWordSelected(result.word) }
                         .padding(12.dp)
                 )
             }
         }
+    }
+
+    state.relatedWordsModal?.let { modal ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissRelatedWordsModal() },
+            confirmButton = {
+                Button(onClick = { viewModel.dismissRelatedWordsModal() }) { Text("Close") }
+            },
+            title = { Text("Words related to ${modal.selectedWord}") },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 400.dp)) {
+                    LazyColumn {
+                        modal.wordsByPattern.forEachIndexed { index, patternWords ->
+                            item {
+                                Text(
+                                    text = "Pattern ${index + 1} (${patternWords.relatedWords.size} words)",
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                            items(patternWords.relatedWords) { word ->
+                                Text(text = word, modifier = Modifier.padding(start = 8.dp, top = 2.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
 }
