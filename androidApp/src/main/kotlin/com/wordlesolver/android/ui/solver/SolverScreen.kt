@@ -21,10 +21,17 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -106,20 +113,38 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                     },
                     modifier = Modifier.weight(1f)
                 )
+                var countFieldValue by remember(patternIndex) {
+                    mutableStateOf(TextFieldValue(pattern.expectedMatchCount.toString()))
+                }
+                // Keep the field in sync if the count changes from outside this field
+                // (e.g. "Clear All"), without clobbering what the user is mid-typing.
+                LaunchedEffect(pattern.expectedMatchCount) {
+                    if (countFieldValue.text.toIntOrNull() != pattern.expectedMatchCount) {
+                        countFieldValue = TextFieldValue(pattern.expectedMatchCount.toString())
+                    }
+                }
                 OutlinedTextField(
-                    value = pattern.expectedMatchCount.toString(),
-                    onValueChange = { text ->
-                        // The field always starts at "0" (the default). Typing a new
-                        // digit should replace that default, not get glued to it (e.g.
-                        // typing "1" must produce 1, never "10"), so strip any leading
-                        // zeros left over once there's more than one digit; an empty or
-                        // all-zero result falls back to the "0" default.
-                        val digitsOnly = text.filter(Char::isDigit)
-                        val normalized = digitsOnly.trimStart('0')
-                        val newCount = normalized.toIntOrNull() ?: 0
-                        viewModel.onPatternExpectedCountChanged(patternIndex, newCount)
+                    value = countFieldValue,
+                    onValueChange = { newValue ->
+                        val digitsOnly = newValue.text.filter(Char::isDigit)
+                        countFieldValue = newValue.copy(text = digitsOnly)
+                        viewModel.onPatternExpectedCountChanged(patternIndex, digitsOnly.toIntOrNull() ?: 0)
                     },
-                    modifier = Modifier.width(72.dp).padding(start = 4.dp)
+                    modifier = Modifier
+                        .width(72.dp)
+                        .padding(start = 4.dp)
+                        // The field always starts showing the "0" default. Without this,
+                        // tapping in and typing a digit inserts it wherever the cursor
+                        // happens to land relative to that "0" (often before it, turning
+                        // "1" into "10") instead of replacing it. Selecting the whole
+                        // value on focus makes any typed digit replace "0" outright.
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                countFieldValue = countFieldValue.copy(
+                                    selection = TextRange(0, countFieldValue.text.length)
+                                )
+                            }
+                        }
                 )
             }
         }
