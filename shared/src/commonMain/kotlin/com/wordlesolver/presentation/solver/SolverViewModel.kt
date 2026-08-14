@@ -74,7 +74,20 @@ class SolverViewModel(
     fun onPatternLetterChanged(patternIndex: Int, position: Int, letter: Char?) {
         _uiState.update { state ->
             state.copy(patterns = state.patterns.replaceAt(patternIndex) { pattern ->
-                pattern.copy(row = pattern.row.withLetter(position, letter))
+                val box = pattern.row.letters[position]
+                // Typing a letter into a still-untouched (gray, default) box promotes it
+                // to green automatically, so the pattern becomes active right away without
+                // requiring an extra tap; the user can still tap the box afterwards to cycle
+                // it to yellow or back to an explicit gray ("not in the word"). Clearing the
+                // letter resets the box back to its untouched gray/default look.
+                val newState = when {
+                    letter == null -> LetterState.GRAY
+                    box.state == LetterState.GRAY -> LetterState.GREEN
+                    else -> box.state
+                }
+                pattern.copy(
+                    row = pattern.row.withLetter(position, letter).withState(position, newState)
+                )
             })
         }
     }
@@ -135,9 +148,7 @@ class SolverViewModel(
      */
     fun onResultWordSelected(word: String) {
         val state = _uiState.value
-        val activePatterns = state.patterns.filter { pattern ->
-            pattern.row.letters.any { it.letter != null }
-        }
+        val activePatterns = state.patterns.filter { it.isActive }
         if (activePatterns.isEmpty()) return
 
         viewModelScope.launch {

@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -77,33 +78,37 @@ private fun LetterBox(
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .background(color)
-            .let { base -> if (onTapped != null) base.clickable { onTapped() } else base },
+            .background(color),
         contentAlignment = Alignment.Center
     ) {
-        if (onTapped != null) {
-            // Pattern boxes: tap to cycle color instead of typing.
-            Text(
-                text = text,
+        // Pattern boxes are still typable (BasicTextField) so the user can enter the
+        // letter for that box; onTapped, when present, is wired to a small dedicated
+        // corner control below instead of the whole box, so tapping to cycle the
+        // color never fights with tapping to focus the field and type.
+        BasicTextField(
+            value = text,
+            onValueChange = { newValue ->
+                val newChar = newValue.trim().uppercase().lastOrNull()
+                onLetterChanged(if (newChar?.isLetter() == true) newChar else null)
+            },
+            textStyle = TextStyle(
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-        } else {
-            BasicTextField(
-                value = text,
-                onValueChange = { newValue ->
-                    val newChar = newValue.trim().uppercase().lastOrNull()
-                    onLetterChanged(if (newChar?.isLetter() == true) newChar else null)
-                },
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    textAlign = TextAlign.Center
-                ),
-                singleLine = true,
-                modifier = Modifier.focusRequester(focusRequester)
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center
+            ),
+            singleLine = true,
+            modifier = Modifier.focusRequester(focusRequester)
+        )
+
+        if (onTapped != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(2.dp)
+                    .size(14.dp)
+                    .background(Color.White.copy(alpha = 0.35f))
+                    .clickable { onTapped() }
             )
         }
     }
