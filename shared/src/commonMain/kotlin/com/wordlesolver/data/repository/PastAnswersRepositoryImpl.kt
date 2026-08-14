@@ -31,10 +31,18 @@ class PastAnswersRepositoryImpl(
         // LocalDate is Comparable in kotlinx-datetime, so this compares chronologically.
         if (lastUpdate >= yesterday) return current
 
-        val fetched = apiService.getAnswers(
-            from = PastAnswersDateFormat.toApiDate(lastUpdate),
-            to = PastAnswersDateFormat.toApiDate(yesterday)
-        )
+        val fetched = try {
+            apiService.getAnswers(
+                from = PastAnswersDateFormat.toApiDate(lastUpdate),
+                to = PastAnswersDateFormat.toApiDate(yesterday)
+            )
+        } catch (e: Exception) {
+            // Network/API failure: keep whatever was already persisted on disk visible
+            // to the user instead of throwing it away, but surface that the sync failed.
+            return current.copy(
+                syncErrorMessage = "Could not sync with WordleHints: ${e.message ?: "unknown error"}"
+            )
+        }
 
         // API returns newest-first (per the spec's example response); the file is
         // appended in chronological order, so sort ascending by date before appending.
@@ -44,7 +52,8 @@ class PastAnswersRepositoryImpl(
 
         val updatedState = PastAnswersState(
             lastUpdateDate = PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.today()),
-            answers = current.answers + newAnswersChronological
+            answers = current.answers + newAnswersChronological,
+            syncErrorMessage = null
         )
 
         persist(updatedState)

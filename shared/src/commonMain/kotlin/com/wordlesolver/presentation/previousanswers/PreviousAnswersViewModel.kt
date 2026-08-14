@@ -41,13 +41,18 @@ class PreviousAnswersViewModel(
                 val yesterday = PastAnswersDateFormat.yesterday()
                 val lastUpdate = PastAnswersDateFormat.parseFileDate(state.lastUpdateDate)
                 _uiState.update {
-                    it.copy(
+                    // Always show whatever answers we do have (even if the last sync
+                        // attempt failed), so the words already on disk stay visible.
+                        it.copy(
                         isLoading = false,
                         answers = state.answers,
-                        isUpToDateThroughYesterday = lastUpdate >= yesterday
+                        isUpToDateThroughYesterday = lastUpdate >= yesterday && state.syncErrorMessage == null,
+                        errorMessage = state.syncErrorMessage
                     )
                 }
             } catch (e: Exception) {
+                // Unexpected failure reading the sync result itself: keep any answers
+                // already in state rather than clearing the list.
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Unknown error") }
             }
         }

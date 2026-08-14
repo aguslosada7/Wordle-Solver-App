@@ -1,10 +1,12 @@
 package com.wordlesolver.android.ui.solver
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,9 +24,13 @@ import androidx.compose.ui.unit.sp
 import com.wordlesolver.domain.model.LetterRow
 
 /**
- * Renders a [LetterRow] as 5 boxes. When typable (onBoxTapped == null), typing a letter
- * auto-advances focus to the next box, per spec: "When the user types one letter in an
- * input, they're immediately moved to the next box in the right."
+ * Renders a [LetterRow] as 5 boxes that share the available width equally (each box is
+ * `weight(1f)` and square via `aspectRatio(1f)`), so the row always spans the full screen
+ * width and adapts to any device size instead of using a fixed pixel size per box.
+ *
+ * When typable (onBoxTapped == null), typing a letter auto-advances focus to the next box,
+ * per spec: "When the user types one letter in an input, they're immediately moved to the
+ * next box in the right."
  */
 @Composable
 fun LetterBoxRow(
@@ -36,7 +42,10 @@ fun LetterBoxRow(
 ) {
     val focusRequesters = remember(row.letters.size) { List(row.letters.size) { FocusRequester() } }
 
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         row.letters.forEach { boxed ->
             LetterBox(
                 letter = boxed.letter,
@@ -48,7 +57,8 @@ fun LetterBoxRow(
                         focusRequesters[boxed.position + 1].requestFocus()
                     }
                 },
-                onTapped = onBoxTapped?.let { { it(boxed.position) } }
+                onTapped = onBoxTapped?.let { { it(boxed.position) } },
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -60,13 +70,15 @@ private fun LetterBox(
     color: Color,
     focusRequester: FocusRequester,
     onLetterChanged: (Char?) -> Unit,
-    onTapped: (() -> Unit)?
+    onTapped: (() -> Unit)?,
+    modifier: Modifier = Modifier
 ) {
     val text = letter?.toString().orEmpty()
     Box(
-        modifier = Modifier
-            .size(48.dp)
-            .background(color),
+        modifier = modifier
+            .aspectRatio(1f)
+            .background(color)
+            .let { base -> if (onTapped != null) base.clickable { onTapped() } else base },
         contentAlignment = Alignment.Center
     ) {
         if (onTapped != null) {

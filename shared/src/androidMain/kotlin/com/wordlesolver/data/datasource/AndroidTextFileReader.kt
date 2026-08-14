@@ -25,7 +25,17 @@ class AndroidTextFileReader(private val context: Context) : TextFileReader {
         if (internalFile.exists()) {
             internalFile.readText()
         } else {
-            context.assets.open(fileName).bufferedReader().use { it.readText() }
+            try {
+                context.assets.open(fileName).bufferedReader().use { it.readText() }
+            } catch (e: java.io.FileNotFoundException) {
+                // Android's AssetManager throws FileNotFoundException with just the file
+                // name as its message, which is confusing if it bubbles up to the UI as-is.
+                throw java.io.IOException(
+                    "Could not find bundled asset '$fileName'. Make sure Android assets " +
+                            "are enabled/packaged for the shared module.",
+                    e
+                )
+            }
         }
     }
 

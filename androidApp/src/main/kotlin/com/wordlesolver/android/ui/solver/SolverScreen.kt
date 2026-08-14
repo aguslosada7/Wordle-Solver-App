@@ -9,15 +9,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,28 +38,37 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
     val viewModel: SolverViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    // A single scrollable LazyColumn hosts the whole screen (inputs + results), so the
+    // user can always scroll up/down no matter how many rows are added, and the
+    // Add/Remove Row buttons never get pushed off-screen.
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // --- Correct letters ---------------------------------------------------
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Correct letters")
-            IconButton(onClick = { viewModel.clearAll() }) {
-                Text("🗑 Clear All")
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Correct letters")
+                TextButton(onClick = { viewModel.clearAll() }) {
+                    Text("🗑 Clear All")
+                }
             }
         }
-        LetterBoxRow(
-            row = state.correctRow,
-            boxColorFor = { WordleColors.Green },
-            onLetterChanged = viewModel::onCorrectLetterChanged
-        )
+        item {
+            LetterBoxRow(
+                row = state.correctRow,
+                boxColorFor = { WordleColors.Green },
+                onLetterChanged = viewModel::onCorrectLetterChanged,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
 
         // --- Misplaced letters ---------------------------------------------------
-        Text("Misplaced letters", modifier = Modifier.padding(top = 16.dp))
-        state.misplacedRows.forEachIndexed { rowIndex, row ->
+        item { Text("Misplaced letters", modifier = Modifier.padding(top = 16.dp)) }
+        items(state.misplacedRows.size) { rowIndex ->
             LetterBoxRow(
-                row = row,
+                row = state.misplacedRows[rowIndex],
                 boxColorFor = { WordleColors.Yellow },
                 onLetterChanged = { position, letter ->
                     viewModel.onMisplacedLetterChanged(rowIndex, position, letter)
@@ -65,18 +76,21 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-            Button(onClick = { viewModel.addMisplacedRow() }) { Text("Add Row") }
-            Button(onClick = { viewModel.removeMisplacedRow() }) { Text("Remove Row") }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                Button(onClick = { viewModel.addMisplacedRow() }) { Text("Add Row") }
+                Button(onClick = { viewModel.removeMisplacedRow() }) { Text("Remove Row") }
+            }
         }
 
         // --- Patterns ---------------------------------------------------------------
-        Text("Patterns", modifier = Modifier.padding(top = 16.dp))
-        state.patterns.forEachIndexed { patternIndex, pattern ->
+        item { Text("Patterns", modifier = Modifier.padding(top = 16.dp)) }
+        items(state.patterns.size) { patternIndex ->
+            val pattern = state.patterns[patternIndex]
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
             ) {
                 LetterBoxRow(
                     row = pattern.row,
@@ -92,68 +106,107 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                     },
                     onBoxTapped = { position ->
                         viewModel.onPatternBoxColorCycled(patternIndex, position)
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = pattern.expectedMatchCount.toString(),
                     onValueChange = { text ->
                         viewModel.onPatternExpectedCountChanged(patternIndex, text.toIntOrNull() ?: 0)
                     },
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.width(72.dp).padding(start = 4.dp)
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-            Button(onClick = { viewModel.addPatternRow() }) { Text("Add Row") }
-            Button(onClick = { viewModel.removePatternRow() }) { Text("Remove Row") }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                Button(onClick = { viewModel.addPatternRow() }) { Text("Add Row") }
+                Button(onClick = { viewModel.removePatternRow() }) { Text("Remove Row") }
+            }
         }
 
         // --- Letters NOT in the word ---------------------------------------------
-        Text("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp))
-        OutlinedTextField(
-            value = state.excludedLettersInput,
-            onValueChange = viewModel::onExcludedLettersChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(WordleColors.White)
-        )
+        item {
+            Text("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp))
+            OutlinedTextField(
+                value = state.excludedLettersInput,
+                onValueChange = viewModel::onExcludedLettersChanged,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .background(WordleColors.White)
+            )
+        }
 
-        Button(onClick = { viewModel.submit() }, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Filter")
+        item {
+            Button(onClick = { viewModel.submit() }, modifier = Modifier.padding(top = 16.dp)) {
+                Text("Filter")
+            }
         }
 
         // --- Switches -----------------------------------------------------------------
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp)) {
-            Switch(checked = state.showOnlyWordleWords, onCheckedChange = viewModel::onShowOnlyWordleWordsToggled)
-            Text("Show only Wordle words", modifier = Modifier.padding(start = 8.dp))
+        // Each switch is paired with its label in the same Row so they can never drift
+        // apart or overlap another switch, and the label wraps instead of being clipped.
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .clickable { viewModel.onShowOnlyWordleWordsToggled(!state.showOnlyWordleWords) }
+            ) {
+                Switch(checked = state.showOnlyWordleWords, onCheckedChange = viewModel::onShowOnlyWordleWordsToggled)
+                Text(
+                    "Show only Wordle words",
+                    modifier = Modifier.padding(start = 8.dp).weight(1f)
+                )
+            }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(checked = state.excludePreviousAnswers, onCheckedChange = viewModel::onExcludePreviousAnswersToggled)
-            Text("Exclude previous answers", modifier = Modifier.padding(start = 8.dp))
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .clickable { viewModel.onExcludePreviousAnswersToggled(!state.excludePreviousAnswers) }
+            ) {
+                Switch(checked = state.excludePreviousAnswers, onCheckedChange = viewModel::onExcludePreviousAnswersToggled)
+                Text(
+                    "Exclude previous answers",
+                    modifier = Modifier.padding(start = 8.dp).weight(1f)
+                )
+            }
         }
 
         // --- Results --------------------------------------------------------------------
         if (state.isLoading) {
-            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+            item { CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp)) }
         }
-        state.errorMessage?.let { Text(it, modifier = Modifier.padding(top = 8.dp)) }
-
-        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            items(state.results) { result: SolverResultWord ->
-                val background = if (!state.showOnlyWordleWords && result.isWordleWord) {
-                    WordleColors.WordleWordBackground
-                } else {
-                    WordleColors.ResultBackground
-                }
+        state.errorMessage?.let { message ->
+            item {
                 Text(
-                    text = result.word,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(background)
-                        .clickable { viewModel.onResultWordSelected(result.word) }
-                        .padding(12.dp)
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
+        }
+
+        items(state.results) { result: SolverResultWord ->
+            val background = if (!state.showOnlyWordleWords && result.isWordleWord) {
+                WordleColors.WordleWordBackground
+            } else {
+                WordleColors.ResultBackground
+            }
+            Text(
+                text = result.word,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .background(background)
+                    .clickable { viewModel.onResultWordSelected(result.word) }
+                    .padding(12.dp)
+            )
         }
     }
 

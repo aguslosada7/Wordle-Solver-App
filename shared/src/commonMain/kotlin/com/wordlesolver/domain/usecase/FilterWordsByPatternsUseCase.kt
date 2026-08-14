@@ -26,7 +26,14 @@ class FilterWordsByPatternsUseCase {
 
         val normalizedGeneral = generalDictionary.map { it.uppercase() }
 
-        return patterns.fold(candidateWords) { remaining, pattern ->
+        // An "inactive" pattern (no letters typed into any of its 5 boxes) isn't a real
+        // clue from the user yet — it must not filter anything out, otherwise the
+        // always-present default pattern row would wipe every result before the user
+        // ever touches the Patterns section.
+        val activePatterns = patterns.filter { pattern -> pattern.row.letters.any { it.letter != null } }
+        if (activePatterns.isEmpty()) return candidateWords
+
+        return activePatterns.fold(candidateWords) { remaining, pattern ->
             val actualMatchCount = normalizedGeneral.count { LetterMatcher.matchesRow(it, pattern.row) }
             if (actualMatchCount != pattern.expectedMatchCount) {
                 emptyList()

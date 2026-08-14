@@ -2,6 +2,7 @@ package com.wordlesolver.android.navigation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
@@ -27,7 +28,9 @@ enum class WordleSolverDestination(val label: String) {
 fun WordleSolverApp(viewModelFactory: ViewModelProvider.Factory) {
     var destination by remember { mutableStateOf(WordleSolverDestination.SOLVER) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // statusBarsPadding keeps app content from being drawn under the phone's status bar
+    // (clock/battery area) at the top of the screen, on any device.
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         Column(modifier = Modifier.weight(1f)) {
             when (destination) {
                 WordleSolverDestination.SOLVER -> SolverScreen(viewModelFactory)
@@ -36,7 +39,7 @@ fun WordleSolverApp(viewModelFactory: ViewModelProvider.Factory) {
             }
         }
         NavigationBar {
-            WordleSolverDestination.values().forEach { dest ->
+            WordleSolverDestination.entries.forEach { dest ->
                 NavigationBarItem(
                     selected = destination == dest,
                     onClick = { destination = dest },

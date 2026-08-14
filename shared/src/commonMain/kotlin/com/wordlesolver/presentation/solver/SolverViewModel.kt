@@ -32,6 +32,12 @@ class SolverViewModel(
     private val _uiState = MutableStateFlow(SolverUiState())
     val uiState: StateFlow<SolverUiState> = _uiState.asStateFlow()
 
+    init {
+        // Show the full (switch-filtered) word list immediately, even before the user
+        // types anything into any input.
+        submit()
+    }
+
     // --- Correct letters row -------------------------------------------------
 
     fun onCorrectLetterChanged(position: Int, letter: Char?) {
@@ -113,10 +119,12 @@ class SolverViewModel(
 
     fun onShowOnlyWordleWordsToggled(enabled: Boolean) {
         _uiState.update { it.copy(showOnlyWordleWords = enabled) }
+        submit()
     }
 
     fun onExcludePreviousAnswersToggled(enabled: Boolean) {
         _uiState.update { it.copy(excludePreviousAnswers = enabled) }
+        submit()
     }
 
     // --- Related words modal (pattern filtering only) --------------------------
@@ -153,6 +161,7 @@ class SolverViewModel(
 
     fun clearAll() {
         _uiState.value = SolverUiState()
+        submit()
     }
 
     /** Runs basic filtering, then pattern filtering, then the two switches. */

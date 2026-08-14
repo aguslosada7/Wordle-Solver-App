@@ -1,12 +1,8 @@
 package com.wordlesolver.android.ui.dictionaries
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -18,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wordlesolver.android.ui.common.WordGrid
 import com.wordlesolver.presentation.dictionaries.DictionariesViewModel
 import com.wordlesolver.presentation.dictionaries.DictionaryTab
 
@@ -46,12 +43,6 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
         }
         state.errorMessage?.let { Text(it, modifier = Modifier.padding(16.dp)) }
 
-        LazyColumn(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            items(state.words) { word ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text(word)
-                }
-            }
-        }
+        WordGrid(words = state.words, modifier = Modifier.fillMaxSize().padding(16.dp))
     }
 }
