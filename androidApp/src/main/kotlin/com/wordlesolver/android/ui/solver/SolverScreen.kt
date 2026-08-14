@@ -92,17 +92,14 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
             ) {
-                LetterBoxRow(
-                    row = pattern.row,
+                PatternColorRow(
+                    colors = pattern.colors,
                     boxColorFor = { boxState ->
                         when (boxState) {
                             LetterState.GREEN -> WordleColors.Green
                             LetterState.YELLOW -> WordleColors.Yellow
                             else -> WordleColors.Gray
                         }
-                    },
-                    onLetterChanged = { position, letter ->
-                        viewModel.onPatternLetterChanged(patternIndex, position, letter)
                     },
                     onBoxTapped = { position ->
                         viewModel.onPatternBoxColorCycled(patternIndex, position)
@@ -112,7 +109,15 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                 OutlinedTextField(
                     value = pattern.expectedMatchCount.toString(),
                     onValueChange = { text ->
-                        viewModel.onPatternExpectedCountChanged(patternIndex, text.toIntOrNull() ?: 0)
+                        // The field always starts at "0" (the default). Typing a new
+                        // digit should replace that default, not get glued to it (e.g.
+                        // typing "1" must produce 1, never "10"), so strip any leading
+                        // zeros left over once there's more than one digit; an empty or
+                        // all-zero result falls back to the "0" default.
+                        val digitsOnly = text.filter(Char::isDigit)
+                        val normalized = digitsOnly.trimStart('0')
+                        val newCount = normalized.toIntOrNull() ?: 0
+                        viewModel.onPatternExpectedCountChanged(patternIndex, newCount)
                     },
                     modifier = Modifier.width(72.dp).padding(start = 4.dp)
                 )
@@ -220,11 +225,18 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
             text = {
                 Column(modifier = Modifier.heightIn(max = 400.dp)) {
                     LazyColumn {
-                        modal.wordsByPattern.forEachIndexed { index, patternWords ->
+                        modal.wordsByPattern.forEach { patternWords ->
                             item {
+                                val emojis = patternWords.pattern.colors.joinToString("") { color ->
+                                    when (color) {
+                                        LetterState.GREEN -> "🟩"
+                                        LetterState.YELLOW -> "🟨"
+                                        else -> "⬜"
+                                    }
+                                }
                                 Text(
-                                    text = "Pattern ${index + 1} (${patternWords.relatedWords.size} words)",
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    text = "$emojis (${patternWords.relatedWords.size} words)",
+                                    modifier = Modifier.padding(top = 12.dp)
                                 )
                             }
                             items(patternWords.relatedWords) { word ->

@@ -71,38 +71,18 @@ class SolverViewModel(
 
     // --- Pattern rows ----------------------------------------------------------
 
-    fun onPatternLetterChanged(patternIndex: Int, position: Int, letter: Char?) {
-        _uiState.update { state ->
-            state.copy(patterns = state.patterns.replaceAt(patternIndex) { pattern ->
-                val box = pattern.row.letters[position]
-                // Typing a letter into a still-untouched (gray, default) box promotes it
-                // to green automatically, so the pattern becomes active right away without
-                // requiring an extra tap; the user can still tap the box afterwards to cycle
-                // it to yellow or back to an explicit gray ("not in the word"). Clearing the
-                // letter resets the box back to its untouched gray/default look.
-                val newState = when {
-                    letter == null -> LetterState.GRAY
-                    box.state == LetterState.GRAY -> LetterState.GREEN
-                    else -> box.state
-                }
-                pattern.copy(
-                    row = pattern.row.withLetter(position, letter).withState(position, newState)
-                )
-            })
-        }
-    }
-
-    /** Cycles a pattern box's color: gray -> green -> yellow -> gray. */
+    /** Cycles a pattern box's color: gray -> green -> yellow -> gray. Patterns have no
+     * letter inputs of their own — this is the only way to edit a Patterns row. */
     fun onPatternBoxColorCycled(patternIndex: Int, position: Int) {
         _uiState.update { state ->
             state.copy(patterns = state.patterns.replaceAt(patternIndex) { pattern ->
-                val box = pattern.row.letters[position]
-                val nextState = when (box.state) {
+                val current = pattern.colors[position]
+                val next = when (current) {
                     LetterState.GRAY -> LetterState.GREEN
                     LetterState.GREEN -> LetterState.YELLOW
                     else -> LetterState.GRAY
                 }
-                pattern.copy(row = pattern.row.withState(position, nextState))
+                pattern.copy(colors = pattern.colors.toMutableList().apply { this[position] = next })
             })
         }
     }
@@ -153,7 +133,7 @@ class SolverViewModel(
 
         viewModelScope.launch {
             val generalDictionary = wordRepository.getGeneralDictionary()
-            val relatedByPattern = getRelatedWordsByPatternUseCase(activePatterns, generalDictionary)
+            val relatedByPattern = getRelatedWordsByPatternUseCase(activePatterns, word, generalDictionary)
             val modalState = RelatedWordsModalState(
                 selectedWord = word,
                 wordsByPattern = activePatterns.map { pattern ->
@@ -220,11 +200,6 @@ class SolverViewModel(
 private fun LetterRow.withLetter(position: Int, letter: Char?): LetterRow =
     LetterRow(letters.mapIndexed { index, boxed ->
         if (index == position) boxed.copy(letter = letter) else boxed
-    })
-
-private fun LetterRow.withState(position: Int, state: LetterState): LetterRow =
-    LetterRow(letters.mapIndexed { index, boxed ->
-        if (index == position) boxed.copy(state = state) else boxed
     })
 
 private fun <T> List<T>.replaceAt(index: Int, transform: (T) -> T): List<T> =

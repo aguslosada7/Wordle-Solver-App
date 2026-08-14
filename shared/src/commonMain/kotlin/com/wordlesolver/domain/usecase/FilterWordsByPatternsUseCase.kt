@@ -1,20 +1,20 @@
 package com.wordlesolver.domain.usecase
 
-import com.wordlesolver.domain.matcher.LetterMatcher
+import com.wordlesolver.domain.matcher.WordleGrader
 import com.wordlesolver.domain.model.WordPattern
 
 /**
- * Applies "pattern filtering" on top of an already basic-filtered word list, per CLAUDE.md:
+ * Applies "pattern filtering" on top of an already basic-filtered word list, per CLAUDE.md.
  *
- * For each [com.wordlesolver.domain.model.WordPattern] the user entered:
- * 1. Count how many words in [generalDictionary] match that pattern's row.
- * 2. If that count is lower than the pattern's [com.wordlesolver.domain.model.WordPattern.expectedMatchCount],
- *    the pattern is treated as unsatisfied and no candidate can pass it (acts as a validation guard
- *    against a mistyped clue-count). The expected count is a floor, not an exact target: "1" means
- *    "at least 1", so a higher actual count is still fine.
- * 3. Otherwise, keep only candidate words that also match the pattern's row themselves.
+ * A [WordPattern] carries no letters of its own — only colors. So for each remaining
+ * candidate word, that candidate itself is treated as the *target* (the presumed
+ * answer), and every pattern's colors are checked against how many General-dictionary
+ * words, used as a *guess*, would produce that exact color feedback against it (real
+ * Wordle duplicate-letter grading, via [WordleGrader]).
  *
- * A word must satisfy every pattern to remain in the result.
+ * A candidate is kept only if, for every active pattern, that count is at least the
+ * pattern's [WordPattern.expectedMatchCount] (a floor, not an exact target — "1" means
+ * "at least 1").
  */
 class FilterWordsByPatternsUseCase {
 
@@ -23,24 +23,21 @@ class FilterWordsByPatternsUseCase {
         patterns: List<WordPattern>,
         generalDictionary: List<String>
     ): List<String> {
-        if (patterns.isEmpty()) return candidateWords
-
-        val normalizedGeneral = generalDictionary.map { it.uppercase() }
-
-        // An "inactive" pattern (no box marked green/yellow yet — including a row left
-        // entirely gray even if letters were typed into it) isn't a real clue from the
-        // user yet — it must not filter anything out, otherwise the always-present
-        // default pattern row would wipe every result before the user ever touches
-        // the Patterns section.
+        // An "inactive" pattern (no box marked green/yellow yet) isn't a real clue from
+        // the user yet — it must not filter anything out, otherwise the always-present
+        // default pattern row would wipe every result before the user ever touches it.
         val activePatterns = patterns.filter { it.isActive }
         if (activePatterns.isEmpty()) return candidateWords
 
-        return activePatterns.fold(candidateWords) { remaining, pattern ->
-            val actualMatchCount = normalizedGeneral.count { LetterMatcher.matchesRow(it, pattern.row) }
-            if (actualMatchCount < pattern.expectedMatchCount) {
-                emptyList()
-            } else {
-                remaining.filter { LetterMatcher.matchesRow(it.uppercase(), pattern.row) }
+        val normalizedGeneral = generalDictionary.map { it.uppercase() }
+
+        return candidateWords.filter { candidate ->
+            val target = candidate.uppercase()
+            activePatterns.all { pattern ->
+                val actualMatchCount = normalizedGeneral.count { guess ->
+                    WordleGrader.grade(guess, target) == pattern.colors
+                }
+                actualMatchCount >= pattern.expectedMatchCount
             }
         }
     }

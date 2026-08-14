@@ -1,9 +1,5 @@
 package com.wordlesolver.presentation.solver
 
-import com.wordlesolver.domain.model.LetterRow
-import com.wordlesolver.domain.model.LetterState
-import com.wordlesolver.domain.model.PositionedLetter
-import com.wordlesolver.domain.model.WordPattern
 import com.wordlesolver.domain.repository.PastAnswersRepository
 import com.wordlesolver.domain.repository.WordRepository
 import kotlinx.coroutines.Dispatchers
@@ -41,11 +37,10 @@ class SolverViewModelRelatedWordsTest {
         Dispatchers.resetMain()
     }
 
-    private fun greenRow(position: Int, letter: Char): LetterRow =
-        LetterRow((0..4).map {
-            if (it == position) PositionedLetter(it, letter, LetterState.GREEN)
-            else PositionedLetter(it, null, LetterState.GREEN)
-        })
+    /** Clicks every box of pattern 0 once, cycling it from the default gray to all-green. */
+    private fun SolverViewModel.makePatternAllGreen() {
+        repeat(5) { position -> onPatternBoxColorCycled(0, position) }
+    }
 
     @Test
     fun selectingWordWithActivePatternPopulatesModal() = runTest {
@@ -53,19 +48,15 @@ class SolverViewModelRelatedWordsTest {
             wordRepository = FakeWordRepository(general = listOf("CRANE", "CRATE", "SLATE")),
             pastAnswersRepository = FakePastAnswersRepository()
         )
-        // Give the first pattern a green 'C' at position 0 (an "active" pattern).
-        val pattern = WordPattern(greenRow(0, 'C'), expectedMatchCount = 2)
-        // Directly mutate state via the same mechanism the UI would (add + edit pattern).
-        repeat(0) { } // no-op, patterns default list already has one empty pattern
-        viewModel.onPatternLetterChanged(0, 0, 'C')
-        viewModel.onPatternExpectedCountChanged(0, 2)
+        // An all-green pattern only matches a guess identical to the target itself.
+        viewModel.makePatternAllGreen()
 
         viewModel.onResultWordSelected("CRANE")
 
         val modal = viewModel.uiState.value.relatedWordsModal
         requireNotNull(modal)
         assertEquals("CRANE", modal.selectedWord)
-        assertEquals(setOf("CRANE", "CRATE"), modal.wordsByPattern.first().relatedWords.toSet())
+        assertEquals(setOf("CRANE"), modal.wordsByPattern.first().relatedWords.toSet())
     }
 
     @Test
@@ -86,7 +77,7 @@ class SolverViewModelRelatedWordsTest {
             wordRepository = FakeWordRepository(general = listOf("CRANE", "CRATE")),
             pastAnswersRepository = FakePastAnswersRepository()
         )
-        viewModel.onPatternLetterChanged(0, 0, 'C')
+        viewModel.makePatternAllGreen()
         viewModel.onResultWordSelected("CRANE")
 
         viewModel.dismissRelatedWordsModal()

@@ -65,6 +65,35 @@ fun LetterBoxRow(
     }
 }
 
+/**
+ * Renders a Patterns row: 5 boxes that are colored only — no letter input at all.
+ * Tapping a box cycles its color (gray -> green -> yellow -> gray); the letters that
+ * ultimately matter come from whichever word the pattern is evaluated against, not
+ * from anything typed here.
+ */
+@Composable
+fun PatternColorRow(
+    colors: List<com.wordlesolver.domain.model.LetterState>,
+    boxColorFor: (com.wordlesolver.domain.model.LetterState) -> Color,
+    onBoxTapped: (position: Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        colors.forEachIndexed { position, state ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f)
+                    .background(boxColorFor(state))
+                    .clickable { onBoxTapped(position) }
+            )
+        }
+    }
+}
+
 @Composable
 private fun LetterBox(
     letter: Char?,
