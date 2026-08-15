@@ -2,8 +2,10 @@ package com.wordlesolver.android.ui.dictionaries
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -38,11 +40,23 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
             )
         }
 
+        OutlinedTextField(
+            value = state.searchQuery,
+            onValueChange = viewModel::onSearchQueryChanged,
+            placeholder = { Text("Search...") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        )
+
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         }
         state.errorMessage?.let { Text(it, modifier = Modifier.padding(16.dp)) }
 
-        WordGrid(words = state.words, modifier = Modifier.fillMaxSize().padding(16.dp))
+        WordGrid(
+            words = state.displayedWords,
+            uppercase = true,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+        )
     }
 }

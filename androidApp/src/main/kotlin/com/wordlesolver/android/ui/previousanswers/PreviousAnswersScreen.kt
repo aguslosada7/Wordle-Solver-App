@@ -3,10 +3,12 @@ package com.wordlesolver.android.ui.previousanswers
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordlesolver.android.ui.common.WordGrid
+import com.wordlesolver.android.ui.theme.WordleColors
 import com.wordlesolver.presentation.previousanswers.PreviousAnswersViewModel
 
 @Composable
@@ -51,8 +54,32 @@ fun PreviousAnswersScreen(viewModelFactory: ViewModelProvider.Factory) {
             }
         }
 
+        if (state.lastUpdateDate.isNotBlank()) {
+            Text(
+                text = "Last update: ${state.lastUpdateDate}",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        OutlinedTextField(
+            value = state.searchQuery,
+            onValueChange = viewModel::onSearchQueryChanged,
+            placeholder = { Text("Search...") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+        )
+
         // The list of answers already loaded from disk stays visible regardless of
         // whether the most recent sync attempt succeeded or failed.
-        WordGrid(words = state.answers, modifier = Modifier.fillMaxSize().padding(top = 16.dp))
+        WordGrid(
+            words = state.displayedAnswers,
+            uppercase = true,
+            backgroundColorFor = { word ->
+                if (word in state.duplicateAnswers) WordleColors.RepeatedAnswerBackground
+                else WordleColors.ResultBackground
+            },
+            modifier = Modifier.fillMaxSize().padding(top = 16.dp)
+        )
     }
 }

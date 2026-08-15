@@ -9,4 +9,6 @@ object WordleColors {
     val White = Color.White
     val ResultBackground = Color(0xFFEBE7F4)
     val WordleWordBackground = Color(0xFFB9B0D4)
+    /** Background for answers in "Previous Answers" that came out more than once. */
+    val RepeatedAnswerBackground = Color(0xFFE3C989)
 }

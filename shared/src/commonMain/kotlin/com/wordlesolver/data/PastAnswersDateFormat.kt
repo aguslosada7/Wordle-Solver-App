@@ -18,10 +18,17 @@ object PastAnswersDateFormat {
 
     fun yesterday(): LocalDate = today().minus(DatePeriod(days = 1))
 
-    /** "yy-mm-dd" (file format) -> LocalDate. Assumes 20xx for the 2-digit year. */
+    /**
+     * "yy-mm-dd" or "yyyy-mm-dd" (file format) -> LocalDate.
+     * The file is documented as using a 2-digit year, but handles a 4-digit year too
+     * (e.g. a bundled/previously-written file using "yyyy-mm-dd") so a mismatch here
+     * never silently produces a garbage year like 4026 that makes the app think it's
+     * permanently "up to date" and skips every future sync.
+     */
     fun parseFileDate(fileDate: String): LocalDate {
-        val (yy, mm, dd) = fileDate.split("-").map { it.toInt() }
-        return LocalDate(year = 2000 + yy, monthNumber = mm, dayOfMonth = dd)
+        val (rawYear, mm, dd) = fileDate.split("-").map { it.toInt() }
+        val year = if (fileDate.substringBefore("-").length >= 4) rawYear else 2000 + rawYear
+        return LocalDate(year = year, monthNumber = mm, dayOfMonth = dd)
     }
 
     /** LocalDate -> "yy-mm-dd" (file format). */
