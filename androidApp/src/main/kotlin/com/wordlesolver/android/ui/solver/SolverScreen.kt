@@ -1,6 +1,8 @@
 package com.wordlesolver.android.ui.solver
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordlesolver.android.ui.theme.WordleColors
@@ -49,20 +51,33 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
     val viewModel: SolverViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
 
-    // A single scrollable LazyColumn hosts the whole screen (inputs + results), so the
-    // user can always scroll up/down no matter how many rows are added, and the
-    // Add/Remove Row buttons never get pushed off-screen.
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // --- Screen title -------------------------------------------------------
+        item {
+            Text(
+                text = "Wordle Solver",
+                fontSize = 33.sp,
+                fontWeight = FontWeight.Bold,
+                color = WordleColors.TitleDark
+            )
+        }
+
         // --- Correct letters ---------------------------------------------------
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Correct letters")
-                TextButton(onClick = { viewModel.clearAll() }) {
-                    Text("🗑 Clear All")
+                SectionTitle("Correct letters")
+                Box(
+                    modifier = Modifier
+                        .background(WordleColors.ResultBackground, RoundedCornerShape(10.dp))
+                        .border(BorderStroke(1.dp, WordleColors.WordCardBorder), RoundedCornerShape(10.dp))
+                        .clickable { viewModel.clearAll() }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("🗑 Clear All", color = WordleColors.WordCardText)
                 }
             }
         }
@@ -76,7 +91,7 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
         }
 
         // --- Misplaced letters ---------------------------------------------------
-        item { Text("Misplaced letters", modifier = Modifier.padding(top = 16.dp)) }
+        item { SectionTitle("Misplaced letters", modifier = Modifier.padding(top = 16.dp)) }
         items(state.misplacedRows.size) { rowIndex ->
             LetterBoxRow(
                 row = state.misplacedRows[rowIndex],
@@ -95,7 +110,7 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
         }
 
         // --- Patterns ---------------------------------------------------------------
-        item { Text("Patterns", modifier = Modifier.padding(top = 16.dp)) }
+        item { SectionTitle("Patterns", modifier = Modifier.padding(top = 16.dp)) }
         items(state.patterns.size) { patternIndex ->
             val pattern = state.patterns[patternIndex]
             Row(
@@ -184,7 +199,7 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
 
         // --- Letters NOT in the word ---------------------------------------------
         item {
-            Text("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp))
+            SectionTitle("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp))
             OutlinedTextField(
                 value = state.excludedLettersInput,
                 onValueChange = viewModel::onExcludedLettersChanged,
@@ -229,6 +244,16 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                 Text(
                     "Exclude previous answers",
                     modifier = Modifier.padding(start = 8.dp).weight(1f)
+                )
+            }
+        }
+
+        // --- Results count ----------------------------------------------------------
+        if (!state.isLoading && state.errorMessage == null) {
+            item {
+                SectionTitle(
+                    text = "We found ${state.results.size} words",
+                    modifier = Modifier.padding(top = 16.dp)
                 )
             }
         }
@@ -298,4 +323,15 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
             }
         )
     }
+}
+
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        fontSize = 25.sp,
+        fontWeight = FontWeight.Bold,
+        color = WordleColors.TitleDark,
+        modifier = modifier
+    )
 }

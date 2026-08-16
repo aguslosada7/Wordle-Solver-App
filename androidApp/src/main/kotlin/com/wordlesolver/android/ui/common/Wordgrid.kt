@@ -21,10 +21,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.wordlesolver.android.ui.theme.WordleColors
 
-/** Border color used around each word card, per the reference design. */
-private val WordCardBorder = Color(0xFFC9C0E0)
-private val WordCardText = Color(0xFF3A3358)
-
 /**
  * Renders [words] as a wrapping flow of small "pill" cards (light lavender background,
  * subtle border). Wraps its own vertical scroll, so it's meant to be used as a screen's
@@ -67,14 +63,14 @@ fun WordCard(
         modifier = modifier
             .let { base -> if (onClick != null) base.clickable { onClick(word) } else base }
             .background(backgroundColor, RoundedCornerShape(10.dp))
-            .border(BorderStroke(1.dp, WordCardBorder), RoundedCornerShape(10.dp))
+            .border(BorderStroke(1.dp, WordleColors.WordCardBorder), RoundedCornerShape(10.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = if (uppercase) word.uppercase() else word.lowercase(),
             fontStyle = if (uppercase) FontStyle.Normal else FontStyle.Italic,
-            color = WordCardText
+            color = WordleColors.WordCardText
         )
     }
 }

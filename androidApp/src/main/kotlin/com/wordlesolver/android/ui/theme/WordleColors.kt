@@ -11,4 +11,10 @@ object WordleColors {
     val WordleWordBackground = Color(0xFFB9B0D4)
     /** Background for answers in "Previous Answers" that came out more than once. */
     val RepeatedAnswerBackground = Color(0xFFE3C989)
+    /** Darker accent used for the screen's main title, darker than the section titles. */
+    val TitleDark = Color(0xFF2D2150)
+    /** Border color used around each word card (dictionaries, past answers, results). */
+    val WordCardBorder = Color(0xFFC9C0E0)
+    /** Text color used inside each word card. */
+    val WordCardText = Color(0xFF3A3358)
 }
