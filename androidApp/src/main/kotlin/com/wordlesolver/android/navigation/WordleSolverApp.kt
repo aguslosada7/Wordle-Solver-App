@@ -24,26 +24,27 @@ enum class WordleSolverDestination(val label: String) {
 }
 
 @Composable
-fun WordleSolverApp(viewModelFactory: ViewModelProvider.Factory) {
+fun WordleSolverApp(
+    viewModelFactory: ViewModelProvider.Factory,
+    colorblindMode: Boolean,
+    onColorblindModeChanged: (Boolean) -> Unit,
+    darkMode: Boolean,
+    onDarkModeChanged: (Boolean) -> Unit
+) {
     var destination by remember { mutableStateOf(WordleSolverDestination.SOLVER) }
-    // Hoisted here (instead of inside SolverScreen) so it survives switching to
-    // "Previous answers" / "Dictionaries" and back — SolverScreen leaves composition
-    // when the destination changes, which would otherwise reset any `remember`ed
-    // state inside it.
-    var colorblindMode by remember { mutableStateOf(false) }
 
-    // statusBarsPadding keeps app content from being drawn under the phone's status bar
-    // (clock/battery area) at the top of the screen, on any device.
     Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         Column(modifier = Modifier.weight(1f)) {
             when (destination) {
                 WordleSolverDestination.SOLVER -> SolverScreen(
                     viewModelFactory = viewModelFactory,
                     colorblindMode = colorblindMode,
-                    onColorblindModeChanged = { colorblindMode = it }
+                    onColorblindModeChanged = onColorblindModeChanged,
+                    darkMode = darkMode,
+                    onDarkModeChanged = onDarkModeChanged
                 )
-                WordleSolverDestination.PREVIOUS_ANSWERS -> PreviousAnswersScreen(viewModelFactory)
-                WordleSolverDestination.DICTIONARIES -> DictionariesScreen(viewModelFactory)
+                WordleSolverDestination.PREVIOUS_ANSWERS -> PreviousAnswersScreen(viewModelFactory, darkMode)
+                WordleSolverDestination.DICTIONARIES -> DictionariesScreen(viewModelFactory, darkMode)
             }
         }
         NavigationBar {

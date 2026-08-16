@@ -9,6 +9,7 @@ import com.wordlesolver.data.remote.WordleHintsApiServiceImpl
 import com.wordlesolver.data.remote.createHttpClient
 import com.wordlesolver.data.repository.PastAnswersRepositoryImpl
 import com.wordlesolver.data.repository.WordRepositoryImpl
+import com.wordlesolver.android.data.AppSettingsRepository
 import com.wordlesolver.domain.repository.PastAnswersRepository
 import com.wordlesolver.domain.repository.WordRepository
 import com.wordlesolver.domain.usecase.SyncPastAnswersUseCase
@@ -25,6 +26,8 @@ class DependencyContainer(context: Context) {
     val wordRepository: WordRepository = WordRepositoryImpl(textFileReader)
     val pastAnswersRepository: PastAnswersRepository = PastAnswersRepositoryImpl(textFileReader, apiService)
     private val syncPastAnswersUseCase = SyncPastAnswersUseCase(pastAnswersRepository)
+
+    val appSettingsRepository = AppSettingsRepository(context)
 
     /** A [ViewModelProvider.Factory] that knows how to build every screen's ViewModel. */
     val viewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {

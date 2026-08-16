@@ -17,11 +17,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordlesolver.android.ui.common.WordGrid
+import com.wordlesolver.android.ui.theme.WordleColors
 import com.wordlesolver.presentation.dictionaries.DictionariesViewModel
 import com.wordlesolver.presentation.dictionaries.DictionaryTab
 
 @Composable
-fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
+fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory, darkMode: Boolean) {
     val viewModel: DictionariesViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
 
@@ -31,7 +32,7 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
             Tab(
                 selected = selectedIndex == 0,
                 onClick = { viewModel.onTabSelected(DictionaryTab.WORDLE) },
-                text = { Text("Wordle (2340)") }
+                text = { Text("Wordle (2341)") }
             )
             Tab(
                 selected = selectedIndex == 1,
@@ -56,7 +57,12 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
         WordGrid(
             words = state.displayedWords,
             uppercase = true,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            backgroundColorFor = { _ ->
+                if (darkMode) WordleColors.ResultDarkBackground else WordleColors.ResultBackground
+            },
+            wordColor = if (darkMode) WordleColors.White else WordleColors.Black,
+            borderColor = if (darkMode) WordleColors.TitleDark else WordleColors.WordCardBorder
         )
     }
 }

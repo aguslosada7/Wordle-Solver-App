@@ -30,6 +30,8 @@ import com.wordlesolver.android.ui.theme.WordleColors
 fun WordGrid(
     words: List<String>,
     modifier: Modifier = Modifier,
+    wordColor: Color = WordleColors.WordCardText,
+    borderColor: Color = WordleColors.WordCardBorder,
     backgroundColorFor: (String) -> Color = { WordleColors.ResultBackground },
     uppercase: Boolean = false,
     onWordClick: ((String) -> Unit)? = null,
@@ -45,7 +47,9 @@ fun WordGrid(
                 word = word,
                 backgroundColor = backgroundColorFor(word),
                 uppercase = uppercase,
-                onClick = onWordClick
+                onClick = onWordClick,
+                wordColor = wordColor,
+                borderColor = borderColor
             )
         }
     }
@@ -55,6 +59,8 @@ fun WordGrid(
 fun WordCard(
     word: String,
     modifier: Modifier = Modifier,
+    wordColor: Color = WordleColors.WordCardText,
+    borderColor: Color = WordleColors.WordCardBorder,
     backgroundColor: Color = WordleColors.ResultBackground,
     uppercase: Boolean = false,
     onClick: ((String) -> Unit)? = null
@@ -63,14 +69,14 @@ fun WordCard(
         modifier = modifier
             .let { base -> if (onClick != null) base.clickable { onClick(word) } else base }
             .background(backgroundColor, RoundedCornerShape(10.dp))
-            .border(BorderStroke(1.dp, WordleColors.WordCardBorder), RoundedCornerShape(10.dp))
+            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(10.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = if (uppercase) word.uppercase() else word.lowercase(),
             fontStyle = if (uppercase) FontStyle.Normal else FontStyle.Italic,
-            color = WordleColors.WordCardText
+            color = wordColor
         )
     }
 }

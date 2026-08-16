@@ -1,6 +1,5 @@
 package com.wordlesolver.android.ui.solver
 
-import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,20 +51,21 @@ import com.wordlesolver.presentation.solver.SolverViewModel
 fun SolverScreen(
     viewModelFactory: ViewModelProvider.Factory,
     colorblindMode: Boolean,
-    onColorblindModeChanged: (Boolean) -> Unit
+    onColorblindModeChanged: (Boolean) -> Unit,
+    darkMode: Boolean,
+    onDarkModeChanged: (Boolean) -> Unit
 ) {
     val viewModel: SolverViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
 
-    // Settings visibility is fine to keep local: it's only relevant while this
-    // screen is on-screen, unlike colorblindMode (see WordleSolverApp) which must
-    // survive switching to other tabs and back.
     var showSettings by remember { mutableStateOf(false) }
 
     if (showSettings) {
         SettingsScreen(
             colorblindMode = colorblindMode,
             onColorblindModeChanged = onColorblindModeChanged,
+            darkMode = darkMode,
+            onDarkModeChanged = onDarkModeChanged,
             onBack = { showSettings = false }
         )
         return
@@ -86,10 +86,10 @@ fun SolverScreen(
                     text = "Wordle Solver",
                     fontSize = 33.sp,
                     fontWeight = FontWeight.Bold,
-                    color = WordleColors.TitleDark
+                    color = if (darkMode) WordleColors.TitleLight else WordleColors.TitleDark
                 )
                 IconButton(onClick = { showSettings = true }) {
-                    Text("⚙", fontSize = 33.sp, color = WordleColors.TitleDark)
+                    Text("⚙", fontSize = 33.sp, color = if (darkMode) WordleColors.TitleLight else WordleColors.TitleDark)
                 }
             }
         }
@@ -101,15 +101,15 @@ fun SolverScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SectionTitle("Correct letters")
+                SectionTitle("Correct letters", darkMode = darkMode)
                 Box(
                     modifier = Modifier
-                        .background(WordleColors.ResultBackground, RoundedCornerShape(10.dp))
-                        .border(BorderStroke(1.dp, WordleColors.WordCardBorder), RoundedCornerShape(10.dp))
+                        .background(if (darkMode) WordleColors.ResultDarkBackground else WordleColors.ResultBackground, RoundedCornerShape(10.dp))
+                        .border(BorderStroke(1.dp, if (darkMode) WordleColors.TitleDark else WordleColors.WordCardBorder), RoundedCornerShape(10.dp))
                         .clickable { viewModel.clearAll() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("🗑 Clear All", color = WordleColors.WordCardText)
+                    Text("🗑 Clear All", color = if (darkMode) WordleColors.TitleLight else WordleColors.WordCardText)
                 }
             }
         }
@@ -123,7 +123,7 @@ fun SolverScreen(
         }
 
         // --- Misplaced letters ---------------------------------------------------
-        item { SectionTitle("Misplaced letters", modifier = Modifier.padding(top = 16.dp)) }
+        item { SectionTitle("Misplaced letters", modifier = Modifier.padding(top = 16.dp), darkMode) }
         items(state.misplacedRows.size) { rowIndex ->
             LetterBoxRow(
                 row = state.misplacedRows[rowIndex],
@@ -142,7 +142,7 @@ fun SolverScreen(
         }
 
         // --- Patterns ---------------------------------------------------------------
-        item { SectionTitle("Patterns", modifier = Modifier.padding(top = 16.dp)) }
+        item { SectionTitle("Patterns", modifier = Modifier.padding(top = 16.dp), darkMode) }
         items(state.patterns.size) { patternIndex ->
             val pattern = state.patterns[patternIndex]
             Row(
@@ -191,6 +191,8 @@ fun SolverScreen(
                                 )
                             }
                         }
+                        .background(if (darkMode) WordleColors.InputDarkBackground else WordleColors.White)
+                        .border(BorderStroke(1.dp, WordleColors.TitleDark), RoundedCornerShape(4.dp))
                 )
                 Column(
                     modifier = Modifier.padding(start = 4.dp),
@@ -231,14 +233,15 @@ fun SolverScreen(
 
         // --- Letters NOT in the word ---------------------------------------------
         item {
-            SectionTitle("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp))
+            SectionTitle("Letters NOT in the word", modifier = Modifier.padding(top = 16.dp), darkMode)
             OutlinedTextField(
                 value = state.excludedLettersInput,
                 onValueChange = viewModel::onExcludedLettersChanged,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
-                    .background(WordleColors.White)
+                    .background(if (darkMode) WordleColors.InputDarkBackground else WordleColors.White)
+                    .border(BorderStroke(1.dp, WordleColors.TitleDark), RoundedCornerShape(4.dp))
             )
         }
 
@@ -285,7 +288,8 @@ fun SolverScreen(
             item {
                 SectionTitle(
                     text = "We found ${state.results.size} words",
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = 16.dp),
+                    darkMode
                 )
             }
         }
@@ -306,9 +310,9 @@ fun SolverScreen(
 
         items(state.results) { result: SolverResultWord ->
             val background = if (!state.showOnlyWordleWords && result.isWordleWord) {
-                WordleColors.WordleWordBackground
+                if (darkMode) WordleColors.Black else WordleColors.WordleWordBackground
             } else {
-                WordleColors.ResultBackground
+                if (darkMode) WordleColors.ResultDarkBackground else WordleColors.ResultBackground
             }
             Text(
                 text = result.word,
@@ -357,18 +361,13 @@ fun SolverScreen(
     }
 }
 
-/**
- * Section title used throughout this screen ("Correct letters", "Patterns", etc.).
- * Bold and larger than body text, using the same accent color as the switches and buttons
- * (MaterialTheme's primary color).
- */
 @Composable
-private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+private fun SectionTitle(text: String, modifier: Modifier = Modifier, darkMode: Boolean) {
     Text(
         text = text,
         fontSize = 25.sp,
         fontWeight = FontWeight.Bold,
-        color = WordleColors.TitleDark,
+        color = if (darkMode) WordleColors.TitleLight else WordleColors.TitleDark,
         modifier = modifier
     )
 }
@@ -377,6 +376,8 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 private fun SettingsScreen(
     colorblindMode: Boolean,
     onColorblindModeChanged: (Boolean) -> Unit,
+    darkMode: Boolean,
+    onDarkModeChanged: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -385,13 +386,13 @@ private fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = onBack) {
-                Text("◀", fontSize = 30.sp, color = WordleColors.TitleDark)
+                Text("◀", fontSize = 30.sp, color = if (darkMode) WordleColors.TitleLight else WordleColors.TitleDark)
             }
             Text(
-                text = "Settings ⚙",
+                text = "Settings",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = WordleColors.TitleDark,
+                color = if (darkMode) WordleColors.TitleLight else WordleColors.TitleDark,
                 modifier = Modifier.padding(start = 4.dp)
             )
         }
@@ -405,6 +406,19 @@ private fun SettingsScreen(
             Switch(checked = colorblindMode, onCheckedChange = onColorblindModeChanged)
             Text(
                 "Colorblind mode",
+                modifier = Modifier.padding(start = 8.dp).weight(1f)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .clickable { onDarkModeChanged(!darkMode) }
+        ) {
+            Switch(checked = darkMode, onCheckedChange = onDarkModeChanged)
+            Text(
+                "Dark mode",
                 modifier = Modifier.padding(start = 8.dp).weight(1f)
             )
         }

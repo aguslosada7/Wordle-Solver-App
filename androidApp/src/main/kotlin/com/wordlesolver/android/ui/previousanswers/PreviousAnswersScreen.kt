@@ -23,7 +23,7 @@ import com.wordlesolver.android.ui.theme.WordleColors
 import com.wordlesolver.presentation.previousanswers.PreviousAnswersViewModel
 
 @Composable
-fun PreviousAnswersScreen(viewModelFactory: ViewModelProvider.Factory) {
+fun PreviousAnswersScreen(viewModelFactory: ViewModelProvider.Factory, darkMode: Boolean) {
     val viewModel: PreviousAnswersViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
 
@@ -76,10 +76,14 @@ fun PreviousAnswersScreen(viewModelFactory: ViewModelProvider.Factory) {
             words = state.displayedAnswers,
             uppercase = true,
             backgroundColorFor = { word ->
-                if (word in state.duplicateAnswers) WordleColors.RepeatedAnswerBackground
-                else WordleColors.ResultBackground
+                if (word in state.duplicateAnswers)
+                    if (darkMode) WordleColors.RepeatedAnswerBackgroundDark else WordleColors.RepeatedAnswerBackground
+                else
+                    if (darkMode) WordleColors.ResultDarkBackground else WordleColors.ResultBackground
             },
-            modifier = Modifier.fillMaxSize().padding(top = 16.dp)
+            modifier = Modifier.fillMaxSize().padding(top = 16.dp),
+            wordColor = if (darkMode) WordleColors.White else WordleColors.Black,
+            borderColor = if (darkMode) WordleColors.TitleDark else WordleColors.WordCardBorder
         )
     }
 }
