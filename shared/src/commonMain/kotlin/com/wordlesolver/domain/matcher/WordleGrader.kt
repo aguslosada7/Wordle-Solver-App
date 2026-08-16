@@ -3,10 +3,10 @@ package com.wordlesolver.domain.matcher
 import com.wordlesolver.domain.model.LetterState
 
 /**
- * Computes the real Wordle color feedback for a [guess] against a [target] word,
+ * Computes the real Wordle color feedback for a guess against a target word,
  * correctly handling repeated letters (the standard two-pass algorithm):
  *
- * 1. Green pass: every position where guess[i] == target[i] is GREEN. Those letter
+ * 1. Green pass: every position where guess[ i ] == target[ i ] is GREEN. Those letter
  *    instances are removed from the pool of "unmatched" target letters.
  * 2. Yellow/gray pass: for every remaining (non-green) position, left to right, the
  *    guess letter is YELLOW if an unmatched instance of it still remains in the

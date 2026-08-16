@@ -27,9 +27,8 @@ private val WordCardText = Color(0xFF3A3358)
 
 /**
  * Renders [words] as a wrapping flow of small "pill" cards (light lavender background,
- * subtle border) sized to just barely fit their text, instead of large fixed-size grid
- * cells. Wraps its own vertical scroll, so it's meant to be used as a screen's own
- * scroll container (do not nest it inside another scrollable).
+ * subtle border). Wraps its own vertical scroll, so it's meant to be used as a screen's
+ * own scroll container (do not nest it inside another scrollable).
  */
 @Composable
 fun WordGrid(

@@ -4,10 +4,10 @@ package com.wordlesolver.domain.model
  * A single row of the "Patterns" section: just 5 box colors (green/yellow/gray),
  * plus the number of General-dictionary words the user expects to match it.
  *
- * Per CLAUDE.md, a Patterns row has NO letter inputs of its own — the user only
- * clicks each box to cycle its color. The letters are always supplied by whichever
- * word the pattern is being evaluated against (a candidate word while filtering the
- * results list, or the tapped word when showing the related-words modal); see
+ * A Patterns row has NO letter inputs of its own — the user only clicks each box to
+ * cycle its color. The letters are always supplied by whichever word the pattern is
+ * being evaluated against (a candidate word while filtering the results list, or the
+ * tapped word when showing the related-words modal); see
  * [com.wordlesolver.domain.matcher.WordleGrader].
  */
 data class WordPattern(

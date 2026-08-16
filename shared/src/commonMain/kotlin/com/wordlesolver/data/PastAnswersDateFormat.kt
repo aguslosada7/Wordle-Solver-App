@@ -5,6 +5,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 
 /**
@@ -21,21 +22,19 @@ object PastAnswersDateFormat {
     /**
      * "yy-mm-dd" or "yyyy-mm-dd" (file format) -> LocalDate.
      * The file is documented as using a 2-digit year, but handles a 4-digit year too
-     * (e.g. a bundled/previously-written file using "yyyy-mm-dd") so a mismatch here
-     * never silently produces a garbage year like 4026 that makes the app think it's
-     * permanently "up to date" and skips every future sync.
+     * (e.g. a bundled/previously-written file using "yyyy-mm-dd").
      */
     fun parseFileDate(fileDate: String): LocalDate {
         val (rawYear, mm, dd) = fileDate.split("-").map { it.toInt() }
         val year = if (fileDate.substringBefore("-").length >= 4) rawYear else 2000 + rawYear
-        return LocalDate(year = year, monthNumber = mm, dayOfMonth = dd)
+        return LocalDate(year = year, month = mm, day = dd)
     }
 
     /** LocalDate -> "yy-mm-dd" (file format). */
     fun toFileDate(date: LocalDate): String {
         val yy = (date.year % 100).toString().padStart(2, '0')
-        val mm = date.monthNumber.toString().padStart(2, '0')
-        val dd = date.dayOfMonth.toString().padStart(2, '0')
+        val mm = date.month.number.toString().padStart(2, '0')
+        val dd = date.day.toString().padStart(2, '0')
         return "$yy-$mm-$dd"
     }
 

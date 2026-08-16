@@ -16,10 +16,6 @@ import com.wordlesolver.presentation.dictionaries.DictionariesViewModel
 import com.wordlesolver.presentation.previousanswers.PreviousAnswersViewModel
 import com.wordlesolver.presentation.solver.SolverViewModel
 
-/**
- * Simple manual dependency container (no DI framework yet - see COMMITS.md roadmap).
- * Built once from [Context.getApplicationContext] and reused for the app's lifetime.
- */
 class DependencyContainer(context: Context) {
 
     private val textFileReader = AndroidTextFileReader(context.applicationContext)

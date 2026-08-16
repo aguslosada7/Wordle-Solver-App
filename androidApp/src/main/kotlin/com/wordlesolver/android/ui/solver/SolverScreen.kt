@@ -137,11 +137,6 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                     modifier = Modifier
                         .width(72.dp)
                         .padding(start = 4.dp)
-                        // The field always starts showing the "0" default. Without this,
-                        // tapping in and typing a digit inserts it wherever the cursor
-                        // happens to land relative to that "0" (often before it, turning
-                        // "1" into "10") instead of replacing it. Selecting the whole
-                        // value on focus makes any typed digit replace "0" outright.
                         .onFocusChanged { focusState ->
                             if (focusState.isFocused) {
                                 countFieldValue = countFieldValue.copy(
@@ -150,8 +145,6 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
                             }
                         }
                 )
-                // Stacked +/- steppers so the expected match count can be nudged
-                // without having to type into the field.
                 Column(
                     modifier = Modifier.padding(start = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -209,8 +202,6 @@ fun SolverScreen(viewModelFactory: ViewModelProvider.Factory) {
         }
 
         // --- Switches -----------------------------------------------------------------
-        // Each switch is paired with its label in the same Row so they can never drift
-        // apart or overlap another switch, and the label wraps instead of being clipped.
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

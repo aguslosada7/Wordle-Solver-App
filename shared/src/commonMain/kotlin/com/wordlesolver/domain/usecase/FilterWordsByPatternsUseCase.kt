@@ -4,7 +4,7 @@ import com.wordlesolver.domain.matcher.WordleGrader
 import com.wordlesolver.domain.model.WordPattern
 
 /**
- * Applies "pattern filtering" on top of an already basic-filtered word list, per CLAUDE.md.
+ * Applies "pattern filtering" on top of an already basic-filtered word list.
  *
  * A [WordPattern] carries no letters of its own — only colors. So for each remaining
  * candidate word, that candidate itself is treated as the *target* (the presumed

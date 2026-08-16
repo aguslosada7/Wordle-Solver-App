@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,7 +27,7 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         val selectedIndex = if (state.selectedTab == DictionaryTab.WORDLE) 0 else 1
-        TabRow(selectedTabIndex = selectedIndex) {
+        SecondaryTabRow(selectedTabIndex = selectedIndex, tabs = {
             Tab(
                 selected = selectedIndex == 0,
                 onClick = { viewModel.onTabSelected(DictionaryTab.WORDLE) },
@@ -38,7 +38,7 @@ fun DictionariesScreen(viewModelFactory: ViewModelProvider.Factory) {
                 onClick = { viewModel.onTabSelected(DictionaryTab.GENERAL) },
                 text = { Text("General (12930)") }
             )
-        }
+        })
 
         OutlinedTextField(
             value = state.searchQuery,

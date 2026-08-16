@@ -6,7 +6,7 @@ import com.wordlesolver.domain.model.FilterCriteria
 /**
  * Applies "basic filtering" (green + yellow + excluded letters) to a candidate word list.
  *
- * Rules (per CLAUDE.md spec):
+ * Rules:
  * - Green letters: word must have that exact letter at that exact position.
  * - Yellow letters: word must contain the letter somewhere, but NOT at the yellow position.
  * - Excluded letters ("Letters NOT in the word"): word must not contain them in any position.

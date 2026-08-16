@@ -27,7 +27,7 @@ import com.wordlesolver.domain.model.LetterRow
 /**
  * Renders a [LetterRow] as 5 boxes that share the available width equally (each box is
  * `weight(1f)` and square via `aspectRatio(1f)`), so the row always spans the full screen
- * width and adapts to any device size instead of using a fixed pixel size per box.
+ * width and adapts to any device size.
  *
  * When typable (onBoxTapped == null), typing a letter auto-advances focus to the next box,
  * per spec: "When the user types one letter in an input, they're immediately moved to the

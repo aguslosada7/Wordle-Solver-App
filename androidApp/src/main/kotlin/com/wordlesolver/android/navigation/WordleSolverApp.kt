@@ -17,7 +17,6 @@ import com.wordlesolver.android.ui.dictionaries.DictionariesScreen
 import com.wordlesolver.android.ui.previousanswers.PreviousAnswersScreen
 import com.wordlesolver.android.ui.solver.SolverScreen
 
-/** The three top-level destinations from the CLAUDE.md navigation bar spec. */
 enum class WordleSolverDestination(val label: String) {
     SOLVER("Solver"),
     PREVIOUS_ANSWERS("Previous answers"),
