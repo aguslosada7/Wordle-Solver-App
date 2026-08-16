@@ -11,11 +11,13 @@ import com.wordlesolver.domain.repository.WordRepository
 import com.wordlesolver.domain.usecase.FilterWordsBasicUseCase
 import com.wordlesolver.domain.usecase.FilterWordsByPatternsUseCase
 import com.wordlesolver.domain.usecase.GetRelatedWordsByPatternUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for the Solver screen. Owns [SolverUiState] and drives the domain use cases;
@@ -171,8 +173,16 @@ class SolverViewModel(
                     patterns = state.patterns
                 )
 
-                var candidates = filterWordsBasicUseCase(generalDictionary, criteria)
-                candidates = filterWordsByPatternsUseCase(candidates, state.patterns, generalDictionary)
+                // filterWordsByPatternsUseCase does its own internal parallel work (it
+                // calls runBlocking on Dispatchers.Default), which would block this
+                // coroutine's thread until done. Running the whole basic+pattern
+                // filtering step via withContext(Dispatchers.Default) keeps that
+                // blocking off viewModelScope's Main thread, so the UI (loading
+                // spinner, navigation, etc.) stays responsive while it runs.
+                var candidates = withContext(Dispatchers.Default) {
+                    val basicFiltered = filterWordsBasicUseCase(generalDictionary, criteria)
+                    filterWordsByPatternsUseCase(basicFiltered, state.patterns, generalDictionary)
+                }
 
                 if (state.showOnlyWordleWords) {
                     candidates = candidates.filter { it in wordleDictionary }
