@@ -3,8 +3,10 @@ package com.wordlesolver.data.repository
 import com.wordlesolver.data.DictionaryFiles
 import com.wordlesolver.data.datasource.TextFileReader
 import com.wordlesolver.domain.repository.WordRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * [WordRepository] implementation backed by [TextFileReader].
@@ -31,8 +33,14 @@ class WordRepositoryImpl(
         }
     }
 
-    private suspend fun loadDictionary(fileName: String): List<String> =
-        fileReader.readLines(fileName)
-            .map { it.trim().uppercase() }
-            .filter { it.isNotEmpty() }
+    private suspend fun loadDictionary(fileName: String): List<String> {
+        val rawLines = fileReader.readLines(fileName)
+        // Normalizing thousands of entries (trim/uppercase/filter) is CPU work, not I/O,
+        // so it's dispatched off the main thread separately from the file read itself.
+        return withContext(Dispatchers.Default) {
+            rawLines
+                .map { it.trim().uppercase() }
+                .filter { it.isNotEmpty() }
+        }
+    }
 }

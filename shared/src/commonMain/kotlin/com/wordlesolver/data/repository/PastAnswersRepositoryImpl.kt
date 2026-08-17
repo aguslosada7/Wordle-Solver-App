@@ -6,6 +6,8 @@ import com.wordlesolver.data.datasource.TextFileReader
 import com.wordlesolver.data.remote.WordleHintsApiService
 import com.wordlesolver.domain.model.PastAnswersState
 import com.wordlesolver.domain.repository.PastAnswersRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * [PastAnswersRepository] implementation backed by [TextFileReader] (for persistence) and
@@ -24,12 +26,18 @@ class PastAnswersRepositoryImpl(
 
     override suspend fun syncPastAnswers(): PastAnswersState {
         val current = readState()
+        val today = PastAnswersDateFormat.today()
         val yesterday = PastAnswersDateFormat.yesterday()
         val lastUpdate = PastAnswersDateFormat.parseFileDate(current.lastUpdateDate)
 
-        // Already up to date through yesterday: skip the network call entirely.
+        // lastUpdateDate stores the date the sync last RAN, not the date its answers go
+        // up through: a sync that runs on day D only fetches through day D-1 (today's
+        // word is never fetched, so it doesn't spoil the puzzle), but still stamps the
+        // file with D. So "already up to date" means we already ran a sync today (or
+        // later), i.e. lastUpdate >= today -- comparing against yesterday here would
+        // incorrectly skip fetching yesterday's word every time this runs on a new day.
         // LocalDate is Comparable in kotlinx-datetime, so this compares chronologically.
-        if (lastUpdate >= yesterday) return current
+        if (lastUpdate >= today) return current
 
         val fetched = try {
             apiService.getAnswers(
@@ -46,12 +54,14 @@ class PastAnswersRepositoryImpl(
 
         // API returns newest-first (per the spec's example response); the file is
         // appended in chronological order, so sort ascending by date before appending.
-        val newAnswersChronological = fetched
-            .sortedBy { it.date }
-            .map { it.answer.uppercase() }
+        val newAnswersChronological = withContext(Dispatchers.Default) {
+            fetched
+                .sortedBy { it.date }
+                .map { it.answer.uppercase() }
+        }
 
         val updatedState = PastAnswersState(
-            lastUpdateDate = PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.today()),
+            lastUpdateDate = PastAnswersDateFormat.toFileDate(today),
             answers = current.answers + newAnswersChronological,
             syncErrorMessage = null
         )
@@ -67,11 +77,13 @@ class PastAnswersRepositoryImpl(
             // dated far enough in the past that the next sync fetches full history.
             return PastAnswersState(lastUpdateDate = "00-01-01", answers = emptyList())
         }
-        val lines = raw.lines()
-        val dateLine = lines.getOrNull(0)?.trim().orEmpty()
-        val answersLine = lines.getOrNull(1)?.trim().orEmpty()
-        val answers = if (answersLine.isEmpty()) emptyList() else answersLine.split(" ")
-        return PastAnswersState(lastUpdateDate = dateLine, answers = answers)
+        return withContext(Dispatchers.Default) {
+            val lines = raw.lines()
+            val dateLine = lines.getOrNull(0)?.trim().orEmpty()
+            val answersLine = lines.getOrNull(1)?.trim().orEmpty()
+            val answers = if (answersLine.isEmpty()) emptyList() else answersLine.split(" ")
+            PastAnswersState(lastUpdateDate = dateLine, answers = answers)
+        }
     }
 
     private suspend fun persist(state: PastAnswersState) {

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.wordlesolver.data.PastAnswersDateFormat
 import com.wordlesolver.domain.usecase.SyncPastAnswersUseCase
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** How long to wait after the last keystroke before re-filtering the list. */
 private val SEARCH_DEBOUNCE = 300.milliseconds
@@ -63,15 +65,16 @@ class PreviousAnswersViewModel(
         searchQueryFlow.value = query
     }
 
-    private fun applyFilter(query: String) {
-        _uiState.update { state ->
-            val filtered = if (query.isBlank()) {
-                state.answers
+    private suspend fun applyFilter(query: String) {
+        val answers = _uiState.value.answers
+        val filtered = withContext(Dispatchers.Default) {
+            if (query.isBlank()) {
+                answers
             } else {
-                state.answers.filter { it.contains(query.trim().uppercase()) }
+                answers.filter { it.contains(query.trim().uppercase()) }
             }
-            state.copy(displayedAnswers = filtered)
         }
+        _uiState.update { it.copy(displayedAnswers = filtered) }
     }
 
     /** Triggers a sync (network call only if needed) and updates the UI state. */
@@ -80,14 +83,21 @@ class PreviousAnswersViewModel(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val state = syncPastAnswersUseCase()
-                val yesterday = PastAnswersDateFormat.yesterday()
+                // lastUpdateDate stores the date the sync last RAN (see
+                // PastAnswersRepositoryImpl), which is one day ahead of the last date
+                // its answers actually cover, so "up to date through yesterday" means
+                // lastUpdate has reached today, not yesterday.
+                val today = PastAnswersDateFormat.today()
                 val lastUpdate = PastAnswersDateFormat.parseFileDate(state.lastUpdateDate)
 
                 // Words that show up more than once (an answer that repeated) get flagged
                 // so the UI can color them differently, but only appear once in the list.
-                val counts = state.answers.groupingBy { it.uppercase() }.eachCount()
-                val duplicates = counts.filterValues { it > 1 }.keys
-                val distinctSorted = counts.keys.sorted()
+                // Grouping/sorting is CPU work, so it's kept off the main thread too.
+                val (distinctSorted, duplicates) = withContext(Dispatchers.Default) {
+                    val counts = state.answers.groupingBy { it.uppercase() }.eachCount()
+                    val duplicateKeys = counts.filterValues { it > 1 }.keys
+                    counts.keys.sorted() to duplicateKeys
+                }
 
                 _uiState.update { current ->
                     // Always show whatever answers we do have (even if the last sync
@@ -97,7 +107,7 @@ class PreviousAnswersViewModel(
                         answers = distinctSorted,
                         duplicateAnswers = duplicates,
                         lastUpdateDate = state.lastUpdateDate,
-                        isUpToDateThroughYesterday = lastUpdate >= yesterday && state.syncErrorMessage == null,
+                        isUpToDateThroughYesterday = lastUpdate >= today && state.syncErrorMessage == null,
                         errorMessage = state.syncErrorMessage
                     )
                 }

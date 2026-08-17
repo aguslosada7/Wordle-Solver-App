@@ -66,9 +66,12 @@ class PastAnswersRepositoryImplTest {
 
     @Test
     fun syncSkipsApiCallWhenAlreadyUpToDate() = runTest {
-        val yesterday = PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.yesterday())
+        // lastUpdateDate stores the date the sync last RAN (one day ahead of the last
+        // date its answers actually cover), so "already up to date" means the stored
+        // date is today, not yesterday.
+        val today = PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.today())
         val fakeReader = FakeTextFileReader1(
-            mutableMapOf(DictionaryFiles.PAST_ANSWERS to "$yesterday\nWORD1 WORD2")
+            mutableMapOf(DictionaryFiles.PAST_ANSWERS to "$today\nWORD1 WORD2")
         )
         val fakeApi = FakeWordleHintsApiService(emptyList())
         val repository = PastAnswersRepositoryImpl(fakeReader, fakeApi)
@@ -78,5 +81,26 @@ class PastAnswersRepositoryImplTest {
         assertEquals(listOf("WORD1", "WORD2"), result.answers)
         assertEquals(0, fakeApi.callCount)
         assertTrue(fakeReader.existsInWritableStorage(DictionaryFiles.PAST_ANSWERS))
+    }
+
+    @Test
+    fun syncFetchesYesterdaysAnswerWhenLastUpdateDateIsYesterday() = runTest {
+        // Regression test: a file last synced yesterday (i.e. its answers only cover
+        // through the day before yesterday) must still fetch yesterday's word today,
+        // rather than being mistaken for "up to date".
+        val yesterday = PastAnswersDateFormat.yesterday()
+        val fakeReader = FakeTextFileReader1(
+            mutableMapOf(DictionaryFiles.PAST_ANSWERS to "${PastAnswersDateFormat.toFileDate(yesterday)}\nWORD1")
+        )
+        val fakeApi = FakeWordleHintsApiService(
+            listOf(WordleAnswerResultDto(1, PastAnswersDateFormat.toApiDate(yesterday), "day", "editor", "NEWER", 3.0))
+        )
+        val repository = PastAnswersRepositoryImpl(fakeReader, fakeApi)
+
+        val result = repository.syncPastAnswers()
+
+        assertEquals(1, fakeApi.callCount)
+        assertEquals(listOf("WORD1", "NEWER"), result.answers)
+        assertEquals(PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.today()), result.lastUpdateDate)
     }
 }

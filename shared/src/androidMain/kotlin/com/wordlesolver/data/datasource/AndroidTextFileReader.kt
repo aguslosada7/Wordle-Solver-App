@@ -17,8 +17,9 @@ import java.io.File
  */
 class AndroidTextFileReader(private val context: Context) : TextFileReader {
 
-    override suspend fun readLines(fileName: String): List<String> =
+    override suspend fun readLines(fileName: String): List<String> = withContext(Dispatchers.IO) {
         readText(fileName).lineSequence().filter { it.isNotBlank() }.toList()
+    }
 
     override suspend fun readText(fileName: String): String = withContext(Dispatchers.IO) {
         val internalFile = internalFile(fileName)

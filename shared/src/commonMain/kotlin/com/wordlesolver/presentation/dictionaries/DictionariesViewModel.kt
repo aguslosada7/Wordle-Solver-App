@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wordlesolver.domain.repository.WordRepository
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** How long to wait after the last keystroke before re-filtering the list. */
 private val SEARCH_DEBOUNCE = 300.milliseconds
@@ -69,15 +71,18 @@ class DictionariesViewModel(
         searchQueryFlow.value = query
     }
 
-    private fun applyFilter(query: String) {
-        _uiState.update { state ->
-            val filtered = if (query.isBlank()) {
-                state.words
+    private suspend fun applyFilter(query: String) {
+        val words = _uiState.value.words
+        // Scanning up to ~12930 words on every keystroke is CPU work, so it's kept
+        // off the main thread; the debounce above already limits how often this runs.
+        val filtered = withContext(Dispatchers.Default) {
+            if (query.isBlank()) {
+                words
             } else {
-                state.words.filter { it.contains(query.trim().uppercase()) }
+                words.filter { it.contains(query.trim().uppercase()) }
             }
-            state.copy(displayedWords = filtered)
         }
+        _uiState.update { it.copy(displayedWords = filtered) }
     }
 
     private fun loadTab(tab: DictionaryTab) {
