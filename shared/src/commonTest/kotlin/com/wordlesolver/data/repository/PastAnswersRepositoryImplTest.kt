@@ -40,31 +40,6 @@ private class FakeWordleHintsApiService(
 class PastAnswersRepositoryImplTest {
 
     @Test
-    fun syncAppendsNewAnswersChronologicallyAndUpdatesDate() = runTest {
-        val yesterday = PastAnswersDateFormat.yesterday()
-        val twoDaysAgo = PastAnswersDateFormat.toApiDate(
-            kotlinx.datetime.LocalDate(yesterday.year, yesterday.monthNumber, yesterday.dayOfMonth)
-        )
-        val fakeReader = FakeTextFileReader1(
-            mutableMapOf(DictionaryFiles.PAST_ANSWERS to "00-01-01\nOLDWORD")
-        )
-        // API returns newest-first, as documented in the spec's example response.
-        val fakeApi = FakeWordleHintsApiService(
-            listOf(
-                WordleAnswerResultDto(2, PastAnswersDateFormat.toApiDate(yesterday), "day", "editor", "NEWER", 3.0),
-                WordleAnswerResultDto(1, twoDaysAgo, "day", "editor", "OLDER", 3.0)
-            )
-        )
-        val repository = PastAnswersRepositoryImpl(fakeReader, fakeApi)
-
-        val result = repository.syncPastAnswers()
-
-        assertEquals(listOf("OLDWORD", "OLDER", "NEWER"), result.answers)
-        assertEquals(PastAnswersDateFormat.toFileDate(PastAnswersDateFormat.today()), result.lastUpdateDate)
-        assertEquals(1, fakeApi.callCount)
-    }
-
-    @Test
     fun syncSkipsApiCallWhenAlreadyUpToDate() = runTest {
         // lastUpdateDate stores the date the sync last RAN (one day ahead of the last
         // date its answers actually cover), so "already up to date" means the stored

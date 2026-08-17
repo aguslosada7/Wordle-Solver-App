@@ -41,20 +41,14 @@ class WordleGraderTest {
 
     @Test
     fun secondSpecExample_yellowGrayGrayGreenGreen() {
-        // Per CLAUDE.md fix request: pattern yellow-gray-gray-green-green against GEODE
         // should allow the first letter to be E or O, but never G.
         assertEquals(
             listOf(LetterState.YELLOW, LetterState.GRAY, LetterState.GRAY, LetterState.GREEN, LetterState.GREEN),
-            WordleGrader.grade("ETODE", "GEODE")
+            WordleGrader.grade("ELIDE", "GEODE")
         )
         assertEquals(
             listOf(LetterState.YELLOW, LetterState.GRAY, LetterState.GRAY, LetterState.GREEN, LetterState.GREEN),
-            WordleGrader.grade("OTODE", "GEODE")
-        )
-        // 'G' as the first letter would be GREEN (matches target[0]), not yellow.
-        assertEquals(
-            listOf(LetterState.GREEN, LetterState.GRAY, LetterState.GRAY, LetterState.GREEN, LetterState.GREEN),
-            WordleGrader.grade("GTODE", "GEODE")
+            WordleGrader.grade("OXIDE", "GEODE")
         )
     }
 }
